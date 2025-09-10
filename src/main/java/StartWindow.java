@@ -1,205 +1,136 @@
 import javax.swing.*;
+import javax.swing.border.EmptyBorder;
 import java.awt.*;
-import java.awt.geom.RoundRectangle2D;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 
 public class StartWindow extends JFrame {
-    private boolean show = true;
+
+    private final JPanel mainPanel;
+    private final CardLayout cardLayout = new CardLayout();
 
     public StartWindow() {
-        // הגדרות בסיסיות של החלון
-        this.setResizable(false);
-        this.setSize(600, 500);
-        this.setDefaultCloseOperation(EXIT_ON_CLOSE);
-        this.setLocationRelativeTo(null);
-        this.setUndecorated(true); // הסרת מסגרת החלון
-        this.setShape(new RoundRectangle2D.Double(0, 0, 600, 500, 30, 30)); // פינות מעוגלות
+        // --- הגדרות בסיסיות של החלון ---
+        setTitle("8-Puzzle Solver");
+        setSize(500, 500);
+        setDefaultCloseOperation(EXIT_ON_CLOSE);
+        setLocationRelativeTo(null); // ממקם במרכז המסך
+        setResizable(false);
 
-        // פאנל ראשי עם רקע מעוצב
-        JPanel mainPanel = new GradientPanel();
-        mainPanel.setLayout(null);
+        // CardLayout הוא מנהל הפריסה האידיאלי להחלפה בין "מסכים"
+        mainPanel = new JPanel(cardLayout);
+
+        // --- יצירת המסכים (הפאנלים) ---
+        JPanel menuPanel = createMenuPanel();
+        JPanel rulesPanel = createRulesPanel();
+
+        // הוספת הפאנלים ל-CardLayout עם שמות מזהים
+        mainPanel.add(menuPanel, "MENU");
+        mainPanel.add(rulesPanel, "RULES");
+
+        // הוספת הפאנל הראשי לחלון
         this.add(mainPanel);
 
-        // כותרת המשחק
-        JLabel titleLabel = new JLabel("8-Puzzle Game");
-        titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 36));
-        titleLabel.setForeground(new Color(240, 240, 240));
-        titleLabel.setBounds(0, 50, 600, 50);
-        titleLabel.setHorizontalAlignment(SwingConstants.CENTER);
-        mainPanel.add(titleLabel);
+        // הצגת מסך התפריט בהתחלה
+        cardLayout.show(mainPanel, "MENU");
 
-        // כפתור התחלה
-        RoundedButton startButton = new RoundedButton("START GAME");
-        startButton.setFont(new Font("Segoe UI", Font.BOLD, 20));
-        startButton.setForeground(Color.WHITE);
-        startButton.setBackground(new Color(45, 220, 40));
-        startButton.setBounds(200, 180, 200, 60);
-        startButton.addActionListener(e -> startGame());
-        mainPanel.add(startButton);
-
-        // כפתור כללים
-        RoundedButton rulesButton = new RoundedButton("HOW TO PLAY");
-        rulesButton.setFont(new Font("Segoe UI", Font.BOLD, 20));
-        rulesButton.setForeground(Color.WHITE);
-        rulesButton.setBackground(new Color(60, 40, 210));
-        rulesButton.setBounds(200, 260, 200, 60);
-        mainPanel.add(rulesButton);
-
-        // תווית עם כללים
-        JLabel rulesLabel = new JLabel("<html><div style='text-align: center;'>"
-                + "<h2>HOW TO PLAY</h2>"
-                + "<p>• Press Ctrl to shuffle the board</p>"
-                + "<p>• Use ARROW KEYS to move the tiles</p>"
-                + "<p>• Press ENTER to solve automatically</p>"
-                + "<p>• Click X to exit the game</p></div></html>");
-        rulesLabel.setForeground(new Color(240, 240, 240));
-        rulesLabel.setFont(new Font("Segoe UI", Font.PLAIN, 16));
-        rulesLabel.setBounds(100, 120, 400, 250);
-        rulesLabel.setHorizontalAlignment(SwingConstants.CENTER);
-        rulesLabel.setVisible(false);
-        mainPanel.add(rulesLabel);
-
-        // טיפול בלחיצות כפתור הכללים
-        rulesButton.addActionListener(e -> {
-            startButton.setVisible(!show);
-            rulesButton.setVisible(!show);
-            rulesLabel.setVisible(show);
-            show = !show;
-        });
-
-        // כפתור יציאה קטן בפינה
-        RoundedButton exitButton = new RoundedButton("X");
-        exitButton.setFont(new Font("Segoe UI", Font.BOLD, 16));
-        exitButton.setForeground(Color.WHITE);
-        exitButton.setBackground(new Color(200, 50, 50));
-        exitButton.setBounds(550, 10, 40, 40);
-        exitButton.addActionListener(e -> System.exit(0));
-        mainPanel.add(exitButton);
-
-        // הצגת החלון
         this.setVisible(true);
     }
 
+    private JPanel createMenuPanel() {
+        JPanel panel = new JPanel(new GridBagLayout());
+        panel.setBackground(new Color(40, 40, 40)); // רקע כהה
+
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.insets = new Insets(10, 10, 10, 10); // ריווח בין רכיבים
+        gbc.gridwidth = 2; // הרכיבים יתפסו 2 טורים
+        gbc.fill = GridBagConstraints.HORIZONTAL; // הרכיבים ימלאו את הרוחב
+
+        // --- כותרת המשחק ---
+        JLabel titleLabel = new JLabel("8-Puzzle Solver", SwingConstants.CENTER);
+        titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 48));
+        titleLabel.setForeground(Color.WHITE);
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        panel.add(titleLabel, gbc);
+
+        // --- כפתור התחלה ---
+        JButton startButton = createStyledButton("Start Game", new Color(76, 175, 80));
+        startButton.addActionListener(e -> startGame());
+        gbc.gridy = 1;
+        gbc.insets = new Insets(40, 10, 10, 10); // ריווח גדול יותר מלמעלה
+        panel.add(startButton, gbc);
+
+        // --- כפתור חוקים ---
+        JButton rulesButton = createStyledButton("How to Play", new Color(33, 150, 243));
+        rulesButton.addActionListener(e -> cardLayout.show(mainPanel, "RULES"));
+        gbc.gridy = 2;
+        gbc.insets = new Insets(10, 10, 10, 10); // חזרה לריווח רגיל
+        panel.add(rulesButton, gbc);
+
+        return panel;
+    }
+
+    private JPanel createRulesPanel() {
+        JPanel panel = new JPanel(new BorderLayout(10, 10));
+        panel.setBackground(new Color(40, 40, 40));
+        panel.setBorder(new EmptyBorder(20, 20, 20, 20)); // ריווח פנימי
+
+        // --- כותרת החוקים ---
+        JLabel rulesTitle = new JLabel("How to Play", SwingConstants.CENTER);
+        rulesTitle.setFont(new Font("Segoe UI", Font.BOLD, 36));
+        rulesTitle.setForeground(Color.WHITE);
+        panel.add(rulesTitle, BorderLayout.NORTH);
+
+        // --- טקסט החוקים המעודכן ---
+        JTextArea rulesText = new JTextArea();
+        rulesText.setText(
+                "• Press 'Ctrl' to shuffle the puzzle into a random solvable state.\n\n" +
+                        "• Use the Arrow Keys (↑, ↓, ←, →) to move the tiles.\n\n" +
+                        "• Press 'Enter' to activate the algorithm and watch the puzzle solve itself!"
+        );
+        rulesText.setFont(new Font("Segoe UI", Font.PLAIN, 18));
+        rulesText.setForeground(Color.WHITE);
+        rulesText.setBackground(new Color(40, 40, 40));
+        rulesText.setEditable(false);
+        rulesText.setLineWrap(true);
+        rulesText.setWrapStyleWord(true);
+        panel.add(rulesText, BorderLayout.CENTER);
+
+        // --- כפתור חזרה ---
+        JButton backButton = createStyledButton("Back to Menu", new Color(244, 67, 54));
+        backButton.addActionListener(e -> cardLayout.show(mainPanel, "MENU"));
+        panel.add(backButton, BorderLayout.SOUTH);
+
+        return panel;
+    }
+
+    // פונקציית עזר ליצירת כפתורים מעוצבים
+    private JButton createStyledButton(String text, Color backgroundColor) {
+        JButton button = new JButton(text);
+        button.setFont(new Font("Segoe UI", Font.BOLD, 22));
+        button.setForeground(Color.WHITE);
+        button.setBackground(backgroundColor);
+        button.setFocusPainted(false);
+        button.setBorder(new EmptyBorder(10, 20, 10, 20));
+        button.setCursor(new Cursor(Cursor.HAND_CURSOR));
+
+        // אפקט Hover
+        Color hoverColor = backgroundColor.brighter();
+        button.addMouseListener(new MouseAdapter() {
+            public void mouseEntered(MouseEvent evt) {
+                button.setBackground(hoverColor);
+            }
+            public void mouseExited(MouseEvent evt) {
+                button.setBackground(backgroundColor);
+            }
+        });
+
+        return button;
+    }
+
     public void startGame() {
-        new Thread(() -> {
-            // אנימציית מעבר
-            for (float opacity = 1.0f; opacity > 0; opacity -= 0.05f) {
-                setOpacity(opacity);
-                try { Thread.sleep(5); } catch (Exception e) {}
-            }
-            dispose(); // סגירת חלון הפתיחה
-            new Window(); // פתיחת חלון המשחק
-        }).start();
-    }
-
-    // מחלקה ליצירת רקע עם גרדיאנט
-    static class GradientPanel extends JPanel {
-        @Override
-        protected void paintComponent(Graphics g) {
-            super.paintComponent(g);
-            Graphics2D g2d = (Graphics2D) g;
-
-            // יצירת גרדיאנט
-            Color color1 = new Color(30, 30, 60);
-            Color color2 = new Color(10, 10, 30);
-            GradientPaint gp = new GradientPaint(0, 0, color1, getWidth(), getHeight(), color2);
-            g2d.setPaint(gp);
-            g2d.fillRect(0, 0, getWidth(), getHeight());
-
-            // הוספת טקסטורת רקע עדינה
-            g2d.setColor(new Color(255, 255, 255, 10));
-            for (int i = 0; i < getWidth(); i += 40) {
-                for (int j = 0; j < getHeight(); j += 40) {
-                    g2d.fillOval(i, j, 3, 3);
-                }
-            }
-
-            // הוספת גבול מעוצב
-            g2d.setStroke(new BasicStroke(3));
-            g2d.setColor(new Color(80, 80, 120));
-            g2d.drawRoundRect(2, 2, getWidth()-4, getHeight()-4, 30, 30);
-        }
-    }
-
-    // מחלקה ליצירת כפתורים מעוגלים עם אפקטים
-    static class RoundedButton extends JButton {
-        private Color hoverColor;
-        private Color pressedColor;
-
-        public RoundedButton(String text) {
-            super(text);
-            setContentAreaFilled(false);
-            setFocusPainted(false);
-            setBorderPainted(false);
-            setOpaque(false);
-            setCursor(new Cursor(Cursor.HAND_CURSOR));
-
-            // אפקטים לאירועי עכבר
-            addMouseListener(new MouseAdapter() {
-                @Override
-                public void mouseEntered(MouseEvent e) {
-                    if (hoverColor != null) {
-                        setBackground(hoverColor);
-                    }
-                }
-
-                @Override
-                public void mouseExited(MouseEvent e) {
-                    setBackground(getBackground());
-                }
-
-                @Override
-                public void mousePressed(MouseEvent e) {
-                    if (pressedColor != null) {
-                        setBackground(pressedColor);
-                    }
-                }
-
-                @Override
-                public void mouseReleased(MouseEvent e) {
-                    setBackground(getBackground());
-                }
-            });
-        }
-
-        @Override
-        public void setBackground(Color bg) {
-            super.setBackground(bg);
-            hoverColor = bg.brighter();
-            pressedColor = bg.darker();
-        }
-
-        @Override
-        protected void paintComponent(Graphics g) {
-            Graphics2D g2 = (Graphics2D) g.create();
-            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-
-            // ציור הרקע
-            if (getModel().isPressed()) {
-                g2.setColor(pressedColor != null ? pressedColor : getBackground().darker());
-            } else if (getModel().isRollover()) {
-                g2.setColor(hoverColor != null ? hoverColor : getBackground().brighter());
-            } else {
-                g2.setColor(getBackground());
-            }
-
-            g2.fillRoundRect(0, 0, getWidth(), getHeight(), 30, 30);
-
-            // ציור הטקסט
-            g2.setColor(getForeground());
-            g2.setFont(getFont());
-            FontMetrics fm = g2.getFontMetrics();
-            Rectangle r = new Rectangle(getWidth(), getHeight());
-            int x = (r.width - fm.stringWidth(getText())) / 2;
-            int y = (r.height - fm.getHeight()) / 2 + fm.getAscent();
-            g2.drawString(getText(), x, y);
-
-            // ציור גבול עדין
-            g2.setColor(new Color(200, 200, 200, 100));
-            g2.drawRoundRect(0, 0, getWidth()-1, getHeight()-1, 30, 30);
-
-            g2.dispose();
-        }
+        Window gameWindow = new Window(); // ודא ששם חלון המשחק שלך הוא "Window"
+        this.dispose(); // סוגר את חלון הפתיחה ומשחרר משאבים
     }
 }

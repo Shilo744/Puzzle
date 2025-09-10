@@ -1,7 +1,9 @@
 import javax.sound.sampled.*;
 import javax.swing.*;
 import java.awt.*;
+import java.io.BufferedInputStream;
 import java.io.File;
+import java.io.InputStream;
 import java.util.Random;
 import java.util.Stack;
 
@@ -12,7 +14,8 @@ public class Board extends JPanel {
     private Color[] colors = new Color[numbers.length];
     private byte location = 8;
     private Stack <Byte>moves=new Stack<>();
-    private final String MOVE_SOUND = "src\\main\\java\\moveSound.wav";
+    private final String MOVE_SOUND = "/moveSound.wav";
+    private final String SHUFFLE_SOUND = "/shuffle.wav";
     public Tiny[] getNumbers() {
         return numbers;
     }
@@ -66,25 +69,25 @@ public class Board extends JPanel {
         return new Color(r,g,b);
     }
     public void solve(){
-            Solver solver = new Solver();
-            Node node = new Node(null, numbers, this.location, (byte) 0);
-            solver.solveIt(node);
+        Solver solver = new Solver();
+        Node node = new Node(null, numbers, this.location, (byte) 0);
+        solver.solveIt(node);
         moves=solver.moves;
         System.out.println("\nsolved in "+moves.size()+" moves");
         orderBoard();
     }
     public void orderBoard(){new Thread(()->{
-            while (!moves.isEmpty()){
-                Stack move=moves;
-                while (!move.isEmpty()){
-                    moves(move);
+        while (!moves.isEmpty()){
+            Stack move=moves;
+            while (!move.isEmpty()){
+                moves(move);
                 try {
                     Thread.sleep(200);
                 } catch (InterruptedException e) {
                     throw new RuntimeException(e);
                 }}
-            }
-        }).start();
+        }
+    }).start();
     }
     public void left(boolean sound) {
         if (location % 3 != 0) {
@@ -156,7 +159,7 @@ public class Board extends JPanel {
     public void shuffle(int moves) {
         Random random = new Random();
         int a;
-        playSound("src\\main\\java\\shuffle.wav");
+        playSound(SHUFFLE_SOUND);
         for (int i = 0; i < moves; i++) {
             a=random.nextInt(4);
             switch (a) {
@@ -173,24 +176,27 @@ public class Board extends JPanel {
         playSound(MOVE_SOUND);
     }
 
-    public static void playSound(String music) {
+    public static void playSound(String resourcePath) {
         try {
-            AudioInputStream sound = AudioSystem.getAudioInputStream(new File(music));
+            InputStream audioSrc = Board.class.getResourceAsStream(resourcePath);
+
+            if (audioSrc == null) {
+                System.err.println("Couldn't find sound file: " + resourcePath);
+                return;
+            }
+
+            // 3. עטיפה ועבודה עם ה-InputStream במקום עם קובץ.
+            InputStream bufferedIn = new BufferedInputStream(audioSrc);
+            AudioInputStream audioStream = AudioSystem.getAudioInputStream(bufferedIn);
+
             Clip clip = AudioSystem.getClip();
-            clip.open(sound);
+            clip.open(audioStream);
             clip.start();
-            clip.addLineListener(new LineListener() {
-                public void update(LineEvent evt) {
-                    if (evt.getType() == LineEvent.Type.STOP) {
-                        evt.getLine().close();
-                    }
-                }
-            });
+            // ...
         } catch (Exception e) {
-            System.out.println("error on sound at 'playSound");
+            // ...
         }
-    }
-    public void paintComponent(Graphics graphics) {
+    }    public void paintComponent(Graphics graphics) {
         super.paintComponent(graphics);
         for (Piece piece : pieces) {
             piece.paint(graphics);
